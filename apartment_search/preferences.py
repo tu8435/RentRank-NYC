@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -116,7 +117,7 @@ DEFAULT_PROFILE_DATA: dict[str, Any] = {
 
 
 def default_profile() -> PreferenceProfile:
-    return profile_from_dict(DEFAULT_PROFILE_DATA)
+    return profile_from_dict(_with_env_overrides(DEFAULT_PROFILE_DATA))
 
 
 def load_profile(path: str | Path | None = None) -> PreferenceProfile:
@@ -125,6 +126,7 @@ def load_profile(path: str | Path | None = None) -> PreferenceProfile:
     with Path(path).open("r", encoding="utf-8") as file:
         data = json.load(file)
     merged = _deep_merge(DEFAULT_PROFILE_DATA, data)
+    merged = _with_env_overrides(merged)
     return profile_from_dict(merged)
 
 
@@ -170,3 +172,29 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
         else:
             merged[key] = value
     return merged
+
+
+def _with_env_overrides(data: dict[str, Any]) -> dict[str, Any]:
+    merged = _deep_merge({}, data)
+
+    if renter_names := _split_env_list("APARTMENT_RENTER_NAMES"):
+        merged["renter_names"] = renter_names
+    if renter_emails := _split_env_list("APARTMENT_RENTER_EMAILS"):
+        merged["renter_emails"] = renter_emails
+    if move_in := _env_value("APARTMENT_MOVE_IN"):
+        merged["move_in"] = move_in
+    if commute_destination := _env_value("APARTMENT_COMMUTE_DESTINATION"):
+        merged["commute"]["destination_address"] = commute_destination
+
+    return merged
+
+
+def _split_env_list(name: str) -> list[str]:
+    raw = _env_value(name)
+    if not raw:
+        return []
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def _env_value(name: str) -> str:
+    return (os.getenv(name) or "").strip()

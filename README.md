@@ -71,6 +71,14 @@ Optional:
 - `GOOGLE_SHEETS_SPREADSHEET_ID`: write to an existing sheet.
 - `GOOGLE_DRIVE_FOLDER_ID`: create a sheet inside a Drive folder.
 - `NYC_OPEN_DATA_APP_TOKEN`: NYC Open Data app token for HPD lookups.
+- `APARTMENT_RENTER_NAMES`: comma-separated renter names for private local runs.
+- `APARTMENT_RENTER_EMAILS`: comma-separated renter emails for private local runs.
+- `APARTMENT_MOVE_IN`: private move-in text override.
+- `APARTMENT_COMMUTE_DESTINATION`: private commute destination override.
+- `APARTMENT_OUTREACH_APPLICANT_DETAILS`: private outreach details block. Use `\n` for line breaks.
+- `APARTMENT_CREDIT_SCORE_NOTES`: private application-doc notes for credit score proof.
+
+The public defaults stay generic. Your ignored `.env` can restore personal details locally without changing tracked source files.
 
 ## Google Setup
 

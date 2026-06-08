@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from apartment_search.models import Listing, PreferenceProfile
 
 
@@ -7,7 +9,7 @@ OUTREACH_TEMPLATE = """Hi {landlord},
 
 I'm {sender_name}. My roommate and I are on the market for apartments with a {move_in} move-in date.
 
-We can provide income, employment, credit, and application documentation upon request.
+{applicant_details}
 
 Our maximum budget is ${max_budget:,} per month.
 
@@ -26,6 +28,7 @@ def build_outreach_draft(listing: Listing, profile: PreferenceProfile, sender_na
         landlord=landlord,
         sender_name=sender_name or profile.renter_names[0],
         move_in=profile.move_in,
+        applicant_details=_applicant_details(),
         max_budget=profile.budget.outreach_max_rent,
         location=location,
     )
@@ -37,3 +40,10 @@ def _agent_name(listing: Listing) -> str | None:
     first = listing.agents[0]
     name = first.get("name") or first.get("agent_name")
     return str(name) if name else None
+
+
+def _applicant_details() -> str:
+    details = (os.getenv("APARTMENT_OUTREACH_APPLICANT_DETAILS") or "").strip()
+    if details:
+        return details.replace("\\n", "\n")
+    return "We can provide income, employment, credit, and application documentation upon request."

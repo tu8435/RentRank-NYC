@@ -8,6 +8,7 @@ from apartment_search.commute import CommuteEstimator, next_weekday_timestamp
 from apartment_search.diligence import application_doc_rows, tour_checklist_rows
 from apartment_search.filtering import classify_laundry, filter_listing
 from apartment_search.hpd import parse_nyc_address
+from apartment_search.outreach import build_outreach_draft
 from apartment_search.pipeline import ApartmentSearchPipeline
 from apartment_search.providers.base import ListingProvider
 from apartment_search.providers.rapidapi_realty import RapidApiRealtyProvider, RapidApiRequestBudgetExceeded
@@ -18,6 +19,43 @@ from apartment_search.scoring import GoogleGeminiScoringClient, ListingScorer, _
 from apartment_search.sheets import CANDIDATE_HEADERS, REJECTED_HEADERS, TOUR_HEADERS, build_workbook_values, build_workflow_rows
 from apartment_search.sheets import parse_drive_folder_id, parse_spreadsheet_id
 from apartment_search.sheets import _usable_path
+
+
+def test_default_profile_uses_private_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APARTMENT_RENTER_NAMES", "Private One, Private Two")
+    monkeypatch.setenv("APARTMENT_RENTER_EMAILS", "one@example.com, two@example.com")
+    monkeypatch.setenv("APARTMENT_MOVE_IN", "August 1")
+    monkeypatch.setenv("APARTMENT_COMMUTE_DESTINATION", "Private Office, New York, NY")
+
+    profile = default_profile()
+
+    assert profile.renter_names == ["Private One", "Private Two"]
+    assert profile.renter_emails == ["one@example.com", "two@example.com"]
+    assert profile.move_in == "August 1"
+    assert profile.commute.destination_address == "Private Office, New York, NY"
+
+
+def test_outreach_uses_private_applicant_details(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APARTMENT_RENTER_NAMES", "Private One, Private Two")
+    monkeypatch.setenv("APARTMENT_OUTREACH_APPLICANT_DETAILS", "Line one\\nLine two")
+    profile = default_profile()
+    listing = Listing(source="test", source_id="1", url="https://streeteasy.com/example", address="123 Main Street")
+
+    draft = build_outreach_draft(listing, profile)
+
+    assert "Line one\nLine two" in draft
+    assert "Private One" in draft
+
+
+def test_application_docs_use_private_credit_notes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APARTMENT_CREDIT_SCORE_NOTES", "Private credit details live here.")
+    profile = default_profile()
+
+    rows = application_doc_rows(profile)
+
+    credit_rows = [row for row in rows if row["document"] == "Credit score proof"]
+    assert credit_rows
+    assert all(row["notes"] == "Private credit details live here." for row in credit_rows)
 
 
 def test_laundry_dealbreaker_rejects_laundromat_only() -> None:

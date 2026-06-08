@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from apartment_search.models import PreferenceProfile
 
 
@@ -39,6 +41,8 @@ def application_doc_rows(profile: PreferenceProfile) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for person in profile.renter_names:
         for document, status, adaptable, notes in BASE_APPLICATION_DOCUMENTS:
+            if document == "Credit score proof":
+                notes = os.getenv("APARTMENT_CREDIT_SCORE_NOTES", notes)
             rows.append(
                 {
                     "person": person,
