@@ -16,6 +16,7 @@ from apartment_search.preferences import load_profile
 from apartment_search.providers import ListingProvider, RapidApiRealtyProvider, RapidApiRequestBudgetExceeded
 from apartment_search.scoring import ListingScorer
 from apartment_search.sheets import GoogleSheetsWriter
+from apartment_search.workspace import load_workspace_config
 
 
 class ApartmentSearchPipeline:
@@ -131,7 +132,8 @@ class SeedListingProvider(ListingProvider):
 
 def build_pipeline(
     profile_path: str | Path | None = None,
-    folder_link_path: str | Path | None = "Shared/link.txt",
+    workspace_path: str | Path | None = None,
+    folder_link_path: str | Path | None = None,
     seed_listings_path: str | Path | None = None,
     use_gemini: bool = False,
     enable_hpd_lookup: bool = False,
@@ -145,11 +147,17 @@ def build_pipeline(
     else:
         provider = RapidApiRealtyProvider(max_requests=rapidapi_max_requests)
 
-    folder_link = None
+    workspace = load_workspace_config(workspace_path)
+    folder_link = workspace.google_drive_folder_link or None
     if folder_link_path and Path(folder_link_path).exists():
         folder_link = Path(folder_link_path).read_text(encoding="utf-8").strip()
 
-    sheets_writer = GoogleSheetsWriter.from_env(folder_link=folder_link)
+    sheets_writer = GoogleSheetsWriter.from_env(
+        folder_link=folder_link,
+        spreadsheet_id=workspace.google_sheets_spreadsheet_id,
+        folder_id=workspace.google_drive_folder_id,
+        spreadsheet_title=workspace.google_sheets_title,
+    )
     scorer = ListingScorer(profile, use_gemini=use_gemini)
     hpd_client = HpdViolationClient(enabled=enable_hpd_lookup)
     listing_cache = ListingCache(listing_cache_path)

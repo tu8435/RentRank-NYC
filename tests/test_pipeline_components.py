@@ -8,6 +8,7 @@ from apartment_search.commute import CommuteEstimator, next_weekday_timestamp
 from apartment_search.diligence import application_doc_rows, tour_checklist_rows
 from apartment_search.filtering import classify_laundry, filter_listing
 from apartment_search.hpd import parse_nyc_address
+from apartment_search.init_wizard import run_init_wizard
 from apartment_search.outreach import build_outreach_draft
 from apartment_search.pipeline import ApartmentSearchPipeline
 from apartment_search.providers.base import ListingProvider
@@ -19,6 +20,12 @@ from apartment_search.scoring import GoogleGeminiScoringClient, ListingScorer, _
 from apartment_search.sheets import CANDIDATE_HEADERS, REJECTED_HEADERS, TOUR_HEADERS, build_workbook_values, build_workflow_rows
 from apartment_search.sheets import parse_drive_folder_id, parse_spreadsheet_id
 from apartment_search.sheets import _usable_path
+from apartment_search.workspace import load_workspace_config
+
+
+@pytest.fixture(autouse=True)
+def use_example_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RENTRANK_PROFILE_PATH", "config/preferences.example.json")
 
 
 def test_default_profile_uses_private_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -56,6 +63,39 @@ def test_application_docs_use_private_credit_notes(monkeypatch: pytest.MonkeyPat
     credit_rows = [row for row in rows if row["document"] == "Credit score proof"]
     assert credit_rows
     assert all(row["notes"] == "Private credit details live here." for row in credit_rows)
+
+
+def test_init_wizard_writes_private_profile_and_workspace(tmp_path) -> None:
+    profile_path = tmp_path / "secrets" / "config" / "preferences.json"
+    workspace_path = tmp_path / "secrets" / "config" / "workspace.json"
+
+    result = run_init_wizard(
+        profile_path=profile_path,
+        workspace_path=workspace_path,
+        force=True,
+        input_fn=lambda _: "",
+        print_fn=lambda _: None,
+    )
+
+    assert result == {"profile_path": str(profile_path), "workspace_path": str(workspace_path)}
+    assert profile_path.exists()
+    assert workspace_path.exists()
+    assert '"renter_names"' in profile_path.read_text(encoding="utf-8")
+    assert '"google_sheets_title"' in workspace_path.read_text(encoding="utf-8")
+
+
+def test_workspace_config_prefers_env_over_file(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    workspace_path = tmp_path / "workspace.json"
+    workspace_path.write_text(
+        '{"google_sheets_spreadsheet_id": "sheet-from-file", "google_sheets_title": "File Title"}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GOOGLE_SHEETS_SPREADSHEET_ID", "sheet-from-env")
+
+    workspace = load_workspace_config(workspace_path)
+
+    assert workspace.google_sheets_spreadsheet_id == "sheet-from-env"
+    assert workspace.google_sheets_title == "File Title"
 
 
 def test_laundry_dealbreaker_rejects_laundromat_only() -> None:

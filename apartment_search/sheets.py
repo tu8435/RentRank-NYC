@@ -136,16 +136,24 @@ class GoogleSheetsWriter:
         self.config = config
 
     @classmethod
-    def from_env(cls, folder_link: str | None = None) -> "GoogleSheetsWriter":
-        folder_id = parse_drive_folder_id(os.getenv("GOOGLE_DRIVE_FOLDER_ID") or "") or parse_drive_folder_id(
-            folder_link or ""
+    def from_env(
+        cls,
+        folder_link: str | None = None,
+        spreadsheet_id: str | None = None,
+        folder_id: str | None = None,
+        spreadsheet_title: str | None = None,
+    ) -> "GoogleSheetsWriter":
+        resolved_folder_id = (
+            parse_drive_folder_id(folder_id or "")
+            or parse_drive_folder_id(os.getenv("GOOGLE_DRIVE_FOLDER_ID") or "")
+            or parse_drive_folder_id(folder_link or "")
         )
-        spreadsheet_id = parse_spreadsheet_id(os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or "")
+        resolved_spreadsheet_id = spreadsheet_id or parse_spreadsheet_id(os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID") or "")
         return cls(
             GoogleSheetsConfig(
-                spreadsheet_id=spreadsheet_id,
-                folder_id=folder_id,
-                spreadsheet_title=os.getenv("GOOGLE_SHEETS_TITLE", "RentRank NYC Candidates"),
+                spreadsheet_id=resolved_spreadsheet_id,
+                folder_id=resolved_folder_id,
+                spreadsheet_title=spreadsheet_title or os.getenv("GOOGLE_SHEETS_TITLE", "RentRank NYC Candidates"),
                 credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
                 oauth_client_secret_path=os.getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
                 oauth_token_path=os.getenv("GOOGLE_OAUTH_TOKEN", "secrets/google-oauth-token.json"),

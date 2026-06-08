@@ -1,7 +1,6 @@
 .DS_Store
 .venv/
 nycapartmentsearch/
-Documents/
 __pycache__/
 .pytest_cache/
 .cache/
@@ -9,8 +8,8 @@ out/
 out.txt
 .env
 secrets/
-Shared/description.txt
-Shared/link.txt
+config/preferences.json
+config/workspace.json
 *.pyc
 *.pyo
 *.egg-info/

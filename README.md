@@ -36,6 +36,19 @@ cp .env.example .env
 
 Fill in `.env` with your own keys. Never commit `.env`.
 
+Run the setup wizard to create private local config files:
+
+```bash
+rentrank-nyc init
+```
+
+The wizard writes:
+
+- `secrets/config/preferences.json`: private renter details, move-in date, budget, commute destination, neighborhoods, and scoring preferences.
+- `secrets/config/workspace.json`: private Google Sheet ID, Drive folder target, and sheet title.
+
+Both files are ignored by git. Public templates live in `config/preferences.example.json` and `config/workspace.example.json`.
+
 ## Environment Variables
 
 Required for live listing search:
@@ -70,7 +83,9 @@ Optional:
 
 - `GOOGLE_SHEETS_SPREADSHEET_ID`: write to an existing sheet.
 - `GOOGLE_DRIVE_FOLDER_ID`: create a sheet inside a Drive folder.
+- `RENTRANK_WORKSPACE_PATH`: private workspace config path. Defaults to `secrets/config/workspace.json` when that file exists, otherwise `config/workspace.example.json`.
 - `NYC_OPEN_DATA_APP_TOKEN`: NYC Open Data app token for HPD lookups.
+- `RENTRANK_PROFILE_PATH`: private preference profile path. Defaults to `secrets/config/preferences.json` when that file exists, otherwise `config/preferences.example.json`.
 - `APARTMENT_RENTER_NAMES`: comma-separated renter names for private local runs.
 - `APARTMENT_RENTER_EMAILS`: comma-separated renter emails for private local runs.
 - `APARTMENT_MOVE_IN`: private move-in text override.
@@ -78,7 +93,7 @@ Optional:
 - `APARTMENT_OUTREACH_APPLICANT_DETAILS`: private outreach details block. Use `\n` for line breaks.
 - `APARTMENT_CREDIT_SCORE_NOTES`: private application-doc notes for credit score proof.
 
-The public defaults stay generic. Your ignored `.env` can restore personal details locally without changing tracked source files.
+The public templates stay generic. Your ignored `secrets/config/*.json` files or private `.env` can restore personal details locally without changing tracked source files.
 
 ## Google Setup
 
@@ -110,7 +125,7 @@ For service-account Sheets access:
 Before running the full pipeline, verify Google auth:
 
 ```bash
-python -m apartment_search.cli --check-google-apis
+rentrank-nyc --check-google-apis
 ```
 
 The output includes safe key fingerprints, Gemini status, and Maps status without printing secrets.
@@ -120,7 +135,7 @@ The output includes safe key fingerprints, Gemini status, and Maps status withou
 Run against local seed listings with no external writes:
 
 ```bash
-python -m apartment_search.cli \
+rentrank-nyc \
   --seed-listings examples/seed_listings.json \
   --dry-run \
   --output out/dry-run.json
@@ -129,7 +144,7 @@ python -m apartment_search.cli \
 Run a live API dry-run without writing to Sheets:
 
 ```bash
-python -m apartment_search.cli \
+rentrank-nyc \
   --dry-run \
   --use-gemini \
   --limit 25 \
@@ -142,7 +157,7 @@ python -m apartment_search.cli \
 Remove `--dry-run` when you are ready to sync the Google Sheet:
 
 ```bash
-python -m apartment_search.cli \
+rentrank-nyc \
   --use-gemini \
   --limit 50 \
   --rapidapi-max-requests 20 \
@@ -167,7 +182,7 @@ Each run reads the existing workbook first:
 Estimate request volume before a larger run:
 
 ```bash
-python -m apartment_search.cli \
+rentrank-nyc \
   --estimate-requests 100 \
   --cache-hit-rate 0.6 \
   --detail-requests-needed \
@@ -179,17 +194,36 @@ RapidAPI requests, Gemini calls, Google Maps calls, and HPD calls are estimated 
 
 ## Preferences
 
-The default preferences live in code and can be exported for editing:
+The easiest private local setup is the wizard:
 
 ```bash
-python -m apartment_search.cli --init-profile config/preferences.json
+rentrank-nyc init
 ```
 
-Then run with:
+You can also generate only the preference file:
 
 ```bash
-python -m apartment_search.cli --profile config/preferences.json --dry-run
+rentrank-nyc --init-profile secrets/config/preferences.json
 ```
+
+Then edit `secrets/config/preferences.json` with your renter names, move-in date, commute destination, budget, neighborhoods, and scoring preferences. To use a different private profile:
+
+```bash
+RENTRANK_PROFILE_PATH=/absolute/path/to/preferences.json rentrank-nyc --dry-run
+```
+
+When no private profile exists, RentRank NYC falls back to the sanitized example profile.
+
+## Workspace Config
+
+`secrets/config/workspace.json` replaces the old `Shared/link.txt` flow. It can contain:
+
+- `google_sheets_spreadsheet_id`: write to an existing Sheet.
+- `google_drive_folder_id`: create new Sheets inside a Drive folder.
+- `google_drive_folder_link`: paste a Drive folder URL instead of an ID.
+- `google_sheets_title`: title used when RentRank NYC creates a new Sheet.
+
+Environment variables like `GOOGLE_SHEETS_SPREADSHEET_ID` still work and override the workspace file.
 
 ## Tests
 

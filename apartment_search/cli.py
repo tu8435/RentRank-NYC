@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 from apartment_search.commute import CommuteEstimator
+from apartment_search.init_wizard import run_init_wizard
 from apartment_search.pipeline import build_pipeline
 from apartment_search.preferences import write_default_profile
 from apartment_search.request_budget import estimate_requests
@@ -15,10 +16,12 @@ from apartment_search.scoring import GoogleGeminiScoringClient
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the NYC apartment search automation pipeline.")
-    parser.add_argument("--profile", help="Path to a JSON preference override file.")
+    parser.add_argument("command", nargs="?", choices=["init"], help="Run an interactive setup command.")
+    parser.add_argument("--profile", help="Path to a JSON preference profile file.")
+    parser.add_argument("--workspace", help="Path to a JSON workspace config file.")
     parser.add_argument("--env-file", default=".env", help="Path to a dotenv-style environment file.")
     parser.add_argument("--seed-listings", help="Path to local listing JSON for dry runs or calibration.")
-    parser.add_argument("--folder-link", default="Shared/link.txt", help="Path to the Google Drive folder link file.")
+    parser.add_argument("--folder-link", help="Legacy path to a Google Drive folder link file.")
     parser.add_argument("--dry-run", action="store_true", help="Build output without writing to Google Sheets.")
     parser.add_argument("--use-gemini", action="store_true", help="Use Gemini scoring through Google's Gemini API when GEMINI_API_KEY is set.")
     parser.add_argument("--hpd-lookup", action="store_true", help="Check NYC Open Data for open HPD violations.")
@@ -31,9 +34,20 @@ def main() -> None:
     parser.add_argument("--maps-requests", action="store_true", help="Include Google Maps requests in the estimate.")
     parser.add_argument("--check-google-apis", action="store_true", help="Run sanitized Gemini and Maps credential checks, then exit.")
     parser.add_argument("--init-profile", help="Write the default preference profile JSON to this path and exit.")
+    parser.add_argument("--profile-output", default="secrets/config/preferences.json", help="Path written by `init` for private preferences.")
+    parser.add_argument("--workspace-output", default="secrets/config/workspace.json", help="Path written by `init` for private workspace config.")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files when running `init`.")
     parser.add_argument("--output", help="Optional path for dry-run JSON output.")
     args = parser.parse_args()
     load_env_file(args.env_file)
+
+    if args.command == "init":
+        run_init_wizard(
+            profile_path=args.profile_output,
+            workspace_path=args.workspace_output,
+            force=args.force,
+        )
+        return
 
     if args.init_profile:
         write_default_profile(args.init_profile)
@@ -58,6 +72,7 @@ def main() -> None:
 
     pipeline = build_pipeline(
         profile_path=args.profile,
+        workspace_path=args.workspace,
         folder_link_path=args.folder_link,
         seed_listings_path=args.seed_listings,
         use_gemini=args.use_gemini,
