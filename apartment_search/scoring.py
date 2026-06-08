@@ -351,9 +351,13 @@ def _centrality_score(listing: Listing, profile: PreferenceProfile) -> float:
     location = " ".join([listing.neighborhood or "", listing.borough or ""]).lower()
     if any(area.lower() in location for area in profile.preferred_locations):
         return 10
+    if any(borough.lower() in location for borough in profile.preferred_boroughs):
+        return 9
     if "manhattan" in location:
         return 9
     if any(area.lower() in location for area in profile.acceptable_locations):
+        return 7
+    if any(borough.lower() in location for borough in profile.acceptable_boroughs):
         return 7
     if "brooklyn" in location:
         return 6

@@ -88,6 +88,8 @@ def profile_from_dict(data: dict[str, Any]) -> PreferenceProfile:
         lease_months=int(data["lease_months"]),
         budget=budget,
         commute=commute,
+        preferred_boroughs=list(data.get("preferred_boroughs", [])),
+        acceptable_boroughs=list(data.get("acceptable_boroughs", [])),
         preferred_locations=list(data["preferred_locations"]),
         acceptable_locations=list(data["acceptable_locations"]),
         min_bedrooms=int(data["min_bedrooms"]),

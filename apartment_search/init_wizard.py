@@ -36,7 +36,83 @@ QUALITATIVE_PRESETS = {
         "bedroom_fit": 16,
         "hosting_space": 12,
     },
+    "hosting-wfh": {
+        "hosting_space": 24,
+        "bedroom_fit": 22,
+        "bright_modern": 18,
+        "commute_transit": 14,
+        "centrality": 10,
+    },
+    "amenities-first": {
+        "laundry": 14,
+        "kitchen": 10,
+        "bathrooms": 8,
+        "bright_modern": 22,
+        "commute_transit": 14,
+    },
+    "space-first": {
+        "bedroom_fit": 26,
+        "hosting_space": 22,
+        "bright_modern": 18,
+        "commute_transit": 12,
+    },
 }
+
+BOROUGH_OPTIONS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]
+
+HARD_REJECT_OPTIONS = [
+    "obviously_dark",
+    "tiny_or_unfair_bedrooms",
+    "no_real_common_space",
+    "nearby_laundromat_only",
+    "sketchy_description",
+    "basement_or_cellar_unit",
+    "no_bedroom_windows",
+    "unsafe_or_poorly_maintained_building",
+    "extreme_commute",
+    "unworkable_walkup",
+]
+
+BOOST_OPTIONS = [
+    "in_unit_laundry",
+    "two_bathrooms",
+    "dishwasher",
+    "counter_space",
+    "private_outdoor_space",
+    "shared_roof_or_yard",
+    "elevator",
+    "doorman_or_package_security",
+    "downtown_manhattan_core",
+    "central_for_manhattan_and_brooklyn_friends",
+    "excellent_natural_light",
+    "renovated_kitchen",
+    "large_equal_bedrooms",
+    "dedicated_desk_space",
+    "great_subway_access",
+    "quiet_block",
+    "strong_storage",
+    "pet_friendly",
+]
+
+PENALTY_OPTIONS = [
+    "stock_or_rendered_photos",
+    "missing_bedroom_photos",
+    "missing_living_room_photos",
+    "too_far_east_west_from_train",
+    "four_plus_floor_walkup",
+    "pest_history",
+    "hpd_violations",
+    "insecure_entry",
+    "vague_description",
+    "low_natural_light",
+    "awkward_layout",
+    "dated_finishes",
+    "small_common_area",
+    "no_dishwasher",
+    "long_subway_walk",
+    "high_broker_fee",
+    "poor_listing_quality",
+]
 
 
 def run_init_wizard(
@@ -108,24 +184,41 @@ def _prompt_profile(profile: dict[str, Any], input_fn: InputFn, print_fn: PrintF
     )
     commute["prefer_few_transfers"] = _ask_bool("Prefer fewer transfers", commute["prefer_few_transfers"], input_fn)
 
-    print_fn("\nNeighborhoods")
-    profile["preferred_locations"] = _ask_list("Preferred neighborhoods", profile["preferred_locations"], input_fn)
-    profile["acceptable_locations"] = _ask_list("Acceptable neighborhoods", profile["acceptable_locations"], input_fn)
+    print_fn("\nBoroughs")
+    profile["preferred_boroughs"] = _ask_numbered_multi(
+        "Preferred boroughs",
+        BOROUGH_OPTIONS,
+        profile.get("preferred_boroughs", ["Manhattan"]),
+        input_fn,
+        print_fn,
+    )
+    profile["acceptable_boroughs"] = _ask_numbered_multi(
+        "Acceptable boroughs",
+        BOROUGH_OPTIONS,
+        profile.get("acceptable_boroughs", ["Brooklyn"]),
+        input_fn,
+        print_fn,
+    )
+    profile["preferred_locations"] = []
+    profile["acceptable_locations"] = []
 
     print_fn("\nQualitative scoring")
-    preset = _ask_choice(
+    preset = _ask_numbered_choice(
         "Qualitative preset",
-        ["balanced", "bright-modern", "commute-first", "budget-first"],
+        list(QUALITATIVE_PRESETS),
         "balanced",
         input_fn,
+        print_fn,
     )
     profile["qualitative"]["weights"].update(QUALITATIVE_PRESETS[preset])
-    profile["qualitative"]["hard_rejects"] = _ask_list(
-        "Hard qualitative rejects", profile["qualitative"]["hard_rejects"], input_fn
+    profile["qualitative"]["hard_rejects"] = _ask_numbered_multi(
+        "Hard qualitative rejects", HARD_REJECT_OPTIONS, profile["qualitative"]["hard_rejects"], input_fn, print_fn
     )
-    profile["qualitative"]["boosts"] = _ask_list("Qualitative boosts", profile["qualitative"]["boosts"], input_fn)
-    profile["qualitative"]["penalties"] = _ask_list(
-        "Qualitative penalties", profile["qualitative"]["penalties"], input_fn
+    profile["qualitative"]["boosts"] = _ask_numbered_multi(
+        "Qualitative boosts", BOOST_OPTIONS, profile["qualitative"]["boosts"], input_fn, print_fn
+    )
+    profile["qualitative"]["penalties"] = _ask_numbered_multi(
+        "Qualitative penalties", PENALTY_OPTIONS, profile["qualitative"]["penalties"], input_fn, print_fn
     )
 
 
@@ -154,6 +247,60 @@ def _ask(prompt: str, default: Any, input_fn: InputFn) -> str:
 def _ask_list(prompt: str, default: list[Any], input_fn: InputFn) -> list[str]:
     response = _ask(prompt, ", ".join(str(item) for item in default), input_fn)
     return [item.strip() for item in response.split(",") if item.strip()]
+
+
+def _ask_numbered_choice(
+    prompt: str,
+    options: list[str],
+    default: str,
+    input_fn: InputFn,
+    print_fn: PrintFn,
+) -> str:
+    _print_numbered_options(prompt, options, print_fn)
+    default_index = _indexes_for_values(options, [default])[0]
+    while True:
+        response = _ask(f"{prompt} number", default_index, input_fn)
+        try:
+            index = int(response)
+        except ValueError:
+            print_fn("Please enter one number from the list.")
+            continue
+        if 1 <= index <= len(options):
+            return options[index - 1]
+        print_fn(f"Please enter a number between 1 and {len(options)}.")
+
+
+def _ask_numbered_multi(
+    prompt: str,
+    options: list[str],
+    defaults: list[str],
+    input_fn: InputFn,
+    print_fn: PrintFn,
+) -> list[str]:
+    _print_numbered_options(prompt, options, print_fn)
+    default_indexes = _indexes_for_values(options, defaults)
+    default_text = ", ".join(str(index) for index in default_indexes)
+    while True:
+        response = _ask(f"{prompt} numbers, comma-separated", default_text, input_fn)
+        try:
+            indexes = [int(part.strip()) for part in response.split(",") if part.strip()]
+        except ValueError:
+            print_fn("Please enter comma-separated numbers from the list.")
+            continue
+        if all(1 <= index <= len(options) for index in indexes):
+            return [options[index - 1] for index in dict.fromkeys(indexes)]
+        print_fn(f"Please enter numbers between 1 and {len(options)}.")
+
+
+def _print_numbered_options(prompt: str, options: list[str], print_fn: PrintFn) -> None:
+    print_fn(f"{prompt}:")
+    for index, option in enumerate(options, start=1):
+        print_fn(f"  {index}. {option}")
+
+
+def _indexes_for_values(options: list[str], values: list[str]) -> list[int]:
+    indexes = [options.index(value) + 1 for value in values if value in options]
+    return indexes or [1]
 
 
 def _ask_people(prompt: str, count: int, defaults: list[Any], fallback_prefix: str, input_fn: InputFn) -> list[str]:

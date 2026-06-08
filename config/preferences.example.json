@@ -23,27 +23,14 @@
     "max_subway_walk_minutes": 7,
     "prefer_few_transfers": true
   },
-  "preferred_locations": [
-    "SoHo",
-    "NoHo",
-    "Lower East Side",
-    "East Village",
-    "West Village",
-    "Greenwich Village",
-    "Tribeca",
-    "Nolita",
-    "Chinatown"
+  "preferred_boroughs": [
+    "Manhattan"
   ],
-  "acceptable_locations": [
-    "Williamsburg",
-    "Greenpoint",
-    "Bushwick",
-    "Downtown Brooklyn",
-    "Fort Greene",
-    "Clinton Hill",
-    "Boerum Hill",
-    "Cobble Hill"
+  "acceptable_boroughs": [
+    "Brooklyn"
   ],
+  "preferred_locations": [],
+  "acceptable_locations": [],
   "min_bedrooms": 2,
   "min_bathrooms": 1,
   "preferred_bathrooms": 1.5,

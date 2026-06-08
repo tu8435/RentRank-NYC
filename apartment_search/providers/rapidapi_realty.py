@@ -52,7 +52,12 @@ class RapidApiRealtyProvider(ListingProvider):
             raise RuntimeError("RAPIDAPI_KEY is required to search listings.")
 
         listings: list[Listing] = []
-        locations = [*profile.preferred_locations, *profile.acceptable_locations]
+        locations = [
+            *profile.preferred_locations,
+            *profile.acceptable_locations,
+            *profile.preferred_boroughs,
+            *profile.acceptable_boroughs,
+        ]
         search_locations = [",".join(locations)] if self.batch_locations else locations
         for location in search_locations:
             params = {

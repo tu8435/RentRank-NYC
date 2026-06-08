@@ -70,6 +70,8 @@ class PreferenceProfile:
     lease_months: int
     budget: BudgetProfile
     commute: CommutePreference
+    preferred_boroughs: list[str]
+    acceptable_boroughs: list[str]
     preferred_locations: list[str]
     acceptable_locations: list[str]
     min_bedrooms: int

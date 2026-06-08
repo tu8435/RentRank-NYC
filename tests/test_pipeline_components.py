@@ -117,6 +117,60 @@ def test_init_wizard_supports_up_to_eight_renters(tmp_path) -> None:
     assert profile["renter_emails"] == emails
 
 
+def test_init_wizard_uses_boroughs_and_numbered_qualitative_choices(tmp_path) -> None:
+    profile_path = tmp_path / "preferences.json"
+    workspace_path = tmp_path / "workspace.json"
+    responses = iter(
+        [
+            "",  # renter count
+            "",  # renter 1 name
+            "",  # renter 2 name
+            "",  # renter 1 email
+            "",  # renter 2 email
+            "",  # move-in
+            "",  # lease length
+            "",  # budget min
+            "",  # budget max
+            "",  # stretch
+            "",  # outreach max
+            "",  # min beds
+            "",  # min baths
+            "",  # preferred baths
+            "",  # laundry
+            "",  # commute destination
+            "",  # target minutes
+            "",  # max minutes
+            "",  # subway walk
+            "",  # fewer transfers
+            "1, 2",  # preferred boroughs
+            "1, 2, 3",  # acceptable boroughs
+            "2",  # preset: bright-modern
+            "1, 3",  # hard rejects
+            "1, 11",  # boosts
+            "1, 10",  # penalties
+            *([""] * 10),
+        ]
+    )
+
+    run_init_wizard(
+        profile_path=profile_path,
+        workspace_path=workspace_path,
+        force=True,
+        input_fn=lambda _: next(responses),
+        print_fn=lambda _: None,
+    )
+
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    assert profile["preferred_boroughs"] == ["Manhattan", "Brooklyn"]
+    assert profile["acceptable_boroughs"] == ["Manhattan", "Brooklyn", "Queens"]
+    assert profile["preferred_locations"] == []
+    assert profile["acceptable_locations"] == []
+    assert profile["qualitative"]["weights"]["bright_modern"] == 32
+    assert profile["qualitative"]["hard_rejects"] == ["obviously_dark", "no_real_common_space"]
+    assert profile["qualitative"]["boosts"] == ["in_unit_laundry", "excellent_natural_light"]
+    assert profile["qualitative"]["penalties"] == ["stock_or_rendered_photos", "low_natural_light"]
+
+
 def test_named_profile_paths_live_under_private_profiles_dir() -> None:
     assert profile_path_for_name("summer-2026").as_posix() == "secrets/config/profiles/summer-2026.json"
 
@@ -375,7 +429,7 @@ def test_manhattan_locations_get_stronger_centrality_than_brooklyn() -> None:
     brooklyn_score = heuristic_score_listing(brooklyn, filter_listing(brooklyn, profile), profile)
 
     assert manhattan_score.categories.centrality == 9
-    assert brooklyn_score.categories.centrality == 6
+    assert brooklyn_score.categories.centrality == 7
     assert manhattan_score.total > brooklyn_score.total
 
 
