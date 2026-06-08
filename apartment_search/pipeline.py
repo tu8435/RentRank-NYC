@@ -164,7 +164,7 @@ def build_pipeline(
 
 
 def _stage(message: str) -> None:
-    print(f"[apartment-search] {message}", file=stderr)
+    print(f"[rentrank-nyc] {message}", file=stderr)
 
 
 def _progress(items: list[Listing], description: str) -> Iterable[Listing]:

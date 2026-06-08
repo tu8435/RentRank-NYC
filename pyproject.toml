@@ -1,7 +1,7 @@
 [project]
-name = "nyc-apartment-search"
+name = "rentrank-nyc"
 version = "0.1.0"
-description = "Spreadsheet-first NYC apartment search automation for StreetEasy-style listings."
+description = "Spreadsheet-first NYC apartment ranking automation for StreetEasy-style listings."
 requires-python = ">=3.11"
 dependencies = [
   "requests>=2.32.0",
@@ -18,7 +18,7 @@ dev = [
 ]
 
 [project.scripts]
-apartment-search = "apartment_search.cli:main"
+rentrank-nyc = "apartment_search.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

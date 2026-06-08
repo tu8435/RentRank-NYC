@@ -125,7 +125,7 @@ AUTO_PROMOTE_SCORE = float(os.getenv("AUTO_PROMOTE_SCORE", "85"))
 class GoogleSheetsConfig:
     spreadsheet_id: str | None = None
     folder_id: str | None = None
-    spreadsheet_title: str = "NYC Apartment Search Candidates"
+    spreadsheet_title: str = "RentRank NYC Candidates"
     credentials_path: str | None = None
     oauth_client_secret_path: str | None = None
     oauth_token_path: str = "secrets/google-oauth-token.json"
@@ -145,7 +145,7 @@ class GoogleSheetsWriter:
             GoogleSheetsConfig(
                 spreadsheet_id=spreadsheet_id,
                 folder_id=folder_id,
-                spreadsheet_title=os.getenv("GOOGLE_SHEETS_TITLE", "NYC Apartment Search Candidates"),
+                spreadsheet_title=os.getenv("GOOGLE_SHEETS_TITLE", "RentRank NYC Candidates"),
                 credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
                 oauth_client_secret_path=os.getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
                 oauth_token_path=os.getenv("GOOGLE_OAUTH_TOKEN", "secrets/google-oauth-token.json"),
@@ -858,7 +858,7 @@ def _build_google_services(
 
 
 def _stage(message: str) -> None:
-    print(f"[apartment-search] {message}", file=stderr)
+    print(f"[rentrank-nyc] {message}", file=stderr)
 
 
 def _usable_path(path: str | None) -> str | None:

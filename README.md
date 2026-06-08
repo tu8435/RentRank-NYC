@@ -1,8 +1,8 @@
-# NYC Apartment Bot
+# RentRank NYC
 
-NYC Apartment Bot is a spreadsheet-first apartment-search assistant for NYC rentals. It pulls StreetEasy-style listings from RapidAPI, applies hard quantitative filters, scores qualitative fit with heuristics and Gemini, estimates commutes with Google Maps, and syncs a Google Sheet review workflow.
+RentRank NYC is a spreadsheet-first apartment-search assistant for NYC rentals. It pulls StreetEasy-style listings from RapidAPI, applies hard quantitative filters, scores qualitative fit with heuristics and Gemini, estimates commute times to/from work via Google Maps, and syncs data to a central Google Sheet review workflow.
 
-The project is intentionally manual-run: it helps build a ranked candidate list, but it does not contact brokers, submit applications, or make final housing decisions.
+The project is intentionally manual-run: it helps build a ranked candidate list of apartments that you (and your roommates) can vote on to tour. It does not contact brokers, submit applications, or make final housing decisions.
 
 ## What It Does
 
